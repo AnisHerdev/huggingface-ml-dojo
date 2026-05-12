@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 // Hardcoded Topic Data from Web Search Grounding
 const TOPICS = [
@@ -627,7 +627,181 @@ image.save("generated_city.png")`,
   }
 ];
 
+
+const notebookDescriptions = {
+  "inside_pipeline_pt": "Walks through what happens inside a pipeline() call — tokenization, model forward pass, and post-processing. Shows how to replicate pipeline behavior manually using AutoTokenizer and AutoModel.",
+  "inside_pipeline_tf": "Walks through what happens inside a pipeline() call — tokenization, model forward pass, and post-processing. Shows how to replicate pipeline behavior manually using AutoTokenizer and AutoModel.",
+  "pipeline_function": "Demonstrates the pipeline() factory function for common NLP tasks. Covers task strings, model selection, and batched inference.",
+  "tokenizer_pipeline": "Explores how tokenizers plug into the pipeline abstraction. Shows tokenizer output shapes and how they feed into model inputs.",
+  "trainer_api": "Full walkthrough of the HuggingFace Trainer class for fine-tuning. Covers TrainingArguments, evaluation strategies, and checkpointing.",
+  "training_loop": "Builds a custom PyTorch training loop without the Trainer API. Covers optimizer setup, gradient accumulation, and evaluation.",
+  "semantic_search": "Builds a semantic search engine using sentence embeddings and FAISS. Covers encoding, indexing, and querying by similarity.",
+  "fast_tokenizers": "Explores the Rust-backed fast tokenizers and their offset mapping features. Covers speed benchmarks and token-to-character alignment.",
+  "building_tokenizer": "Trains a tokenizer from scratch on a custom corpus. Covers BPE and WordPiece algorithms and vocabulary construction.",
+  "train_new_tokenizer": "Shows how to train a new tokenizer from an existing one using train_new_from_iterator. Covers corpus preparation and special token handling.",
+  "domain_adaptation": "Fine-tunes a pretrained language model on domain-specific text using masked language modeling. Covers continued pretraining techniques.",
+  "annotated_diffusion": "Annotated implementation of a diffusion model (DDPM) from scratch in PyTorch. Covers the forward noising process, U-Net architecture, and reverse denoising.",
+  "stable_diffusion": "Introduces Stable Diffusion inference using the diffusers library. Covers the StableDiffusionPipeline, prompt engineering, and image generation parameters.",
+  "image_2_image_using_diffusers": "Demonstrates image-to-image generation with Stable Diffusion. Covers strength parameter, prompt guidance, and conditioning on an input image.",
+  "in_painting_with_stable_diffusion_using_diffusers": "Walks through inpainting with Stable Diffusion — selectively regenerating masked regions of an image using a prompt.",
+  "controlnet": "Shows how to use ControlNet to guide Stable Diffusion generation with structural inputs like edge maps, pose, and depth.",
+  "dreambooth": "Fine-tunes Stable Diffusion on a small set of subject images using DreamBooth. Covers the training loop, prior preservation loss, and inference.",
+  "lora": "Applies LoRA (Low-Rank Adaptation) to fine-tune a large model with minimal trainable parameters. Covers rank selection, adapter injection, and merging.",
+  "text_classification": "Fine-tunes a BERT-style model on a text classification dataset. Covers tokenization, dataset preparation, Trainer setup, and evaluation metrics.",
+  "question_answering": "Fine-tunes a model for extractive QA on SQuAD. Covers context/question tokenization, span prediction, and postprocessing.",
+  "summarization": "Fine-tunes a seq2seq model (T5/BART) for abstractive summarization. Covers input truncation, target length, and ROUGE evaluation.",
+  "translation": "Fine-tunes a seq2seq model for machine translation. Covers language pair tokenization, beam search, and BLEU scoring.",
+  "token_classification": "Fine-tunes a model for NER and POS tagging. Covers word-to-token alignment, label mapping, and seqeval metrics.",
+  "language_modeling": "Fine-tunes a causal language model for text generation. Covers dataset chunking, cross-entropy loss, and perplexity evaluation.",
+  "masked_language_modeling": "Fine-tunes a masked language model using the MLM objective. Covers data collation with random masking and whole-word masking.",
+  "preprocessing": "Covers all preprocessing steps for NLP tasks — tokenization, padding, truncation, and batching with the datasets library.",
+  "quicktour": "A fast overview of the HuggingFace Transformers library. Covers pipeline(), AutoModel, AutoTokenizer, and the Hub in under 10 minutes.",
+  "training": "End-to-end fine-tuning walkthrough using both the Trainer API and a native PyTorch loop. Covers saving, loading, and pushing to the Hub.",
+  "tokenizer_summary": "Explains the different tokenization algorithms (BPE, WordPiece, SentencePiece) and how they differ across model families.",
+  "peft": "Introduces the PEFT library for parameter-efficient fine-tuning. Covers LoRA, prefix tuning, and prompt tuning with minimal code.",
+  "llm_tutorial": "Practical guide to running inference with large language models. Covers text generation strategies, sampling parameters, and batching."
+};
+
+const formatReadableTitle = (name) => {
+  let title = name.replace(/[_-]/g, " ");
+  title = title.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  title = title.replace(/ Pt$/i, " (PyTorch)");
+  title = title.replace(/ Tf$/i, " (TensorFlow)");
+  return title;
+};
+
+const generateTags = (name) => {
+  const nameLower = name.toLowerCase();
+  const tags = [];
+  if (nameLower.includes("pipeline")) tags.push("Pipeline");
+  if (nameLower.includes("token")) tags.push("Tokenization");
+  if (nameLower.includes("train") || nameLower.includes("finetune") || nameLower.includes("fine_tune")) tags.push("Training");
+  if (nameLower.includes("diffusion") || nameLower.includes("sd_")) tags.push("Diffusion");
+  if (nameLower.includes("lora") || nameLower.includes("peft") || nameLower.includes("dreambooth")) tags.push("Fine-Tuning");
+  if (nameLower.includes("classif")) tags.push("Classification");
+  if (nameLower.includes("qa") || nameLower.includes("question")) tags.push("QA");
+  if (nameLower.endsWith("_pt")) tags.push("PyTorch");
+  if (nameLower.endsWith("_tf")) tags.push("TensorFlow");
+  if (nameLower.includes("image") || nameLower.includes("img") || nameLower.includes("vision")) tags.push("Vision");
+  if (nameLower.includes("audio") || nameLower.includes("speech") || nameLower.includes("asr")) tags.push("Audio");
+  if (nameLower.includes("summariz")) tags.push("Summarization");
+  if (nameLower.includes("translat")) tags.push("Translation");
+  return tags;
+};
+
 function App() {
+
+  const [activeMainTab, setActiveMainTab] = useState("learn"); // "learn" | "explore"
+  const [notebookPaths, setNotebookPaths] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [fetchError, setFetchError] = useState(null);
+  const [lastFetched, setLastFetched] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedNodes, setExpandedNodes] = useState({});
+  const [selectedNotebook, setSelectedNotebook] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const fetchNotebookTree = async () => {
+    setFetchStatus("loading");
+    try {
+      const response = await fetch("https://api.github.com/repos/huggingface/notebooks/git/trees/main?recursive=1");
+      if (response.status === 403) {
+        const data = await response.json().catch(() => ({}));
+        if (data.message && data.message.includes("rate limit")) {
+          setFetchError("GitHub rate limit reached. Wait ~1 hour or try again later.");
+        } else {
+          setFetchError("Failed to fetch: " + response.status);
+        }
+        setFetchStatus("error");
+        return;
+      }
+      if (!response.ok) {
+        setFetchError("Failed to fetch: " + response.status);
+        setFetchStatus("error");
+        return;
+      }
+      const data = await response.json();
+      const paths = data.tree.filter(item => item.type === "blob" && item.path.endsWith(".ipynb")).map(item => item.path);
+      setNotebookPaths(paths);
+      setFetchStatus("success");
+      setLastFetched(new Date());
+    } catch (error) {
+      setFetchError("Network error. Check your connection.");
+      setFetchStatus("error");
+    }
+  };
+
+  useEffect(() => {
+    fetchNotebookTree();
+  }, []);
+
+  const buildTree = (paths) => {
+    const mapping = [
+      { prefix: "course/en/", label: "HF Course (English)" },
+      { prefix: "course/videos/", label: "Video Tutorials" },
+      { prefix: "course/", label: "HF Course (Other Languages)" },
+      { prefix: "diffusers_doc/", label: "Diffusers Docs" },
+      { prefix: "diffusers/", label: "Diffusers Notebooks" },
+      { prefix: "transformers_doc/en/", label: "Transformers Docs" },
+      { prefix: "peft_docs/", label: "PEFT" },
+      { prefix: "peft/", label: "PEFT" },
+      { prefix: "datasets-server_doc/", label: "Datasets" },
+      { prefix: "datasets_doc/", label: "Datasets" },
+      { prefix: "sagemaker/", label: "SageMaker" },
+      { prefix: "smolagents_doc/", label: "SmolAgents" },
+      { prefix: "setfit_doc/", label: "SetFit" },
+      { prefix: "examples/", label: "Examples" }
+    ];
+
+    const getSection = (path) => {
+      for (const m of mapping) {
+        if (path.startsWith(m.prefix)) {
+          return { label: m.label, remainder: path.slice(m.prefix.length) };
+        }
+      }
+      return { label: "Other", remainder: path };
+    };
+
+    const tree = {};
+    paths.forEach(path => {
+      const { label, remainder } = getSection(path);
+      if (!tree[label]) {
+        tree[label] = { notebooks: [], folders: {} };
+      }
+      
+      const parts = remainder.split("/");
+      const filename = parts.pop();
+      const name = filename.replace(/\.ipynb$/, "");
+      
+      let current = tree[label];
+      let currentPathSegments = [];
+      parts.forEach(part => {
+        currentPathSegments.push(part);
+        const folderKey = currentPathSegments.join("/");
+        if (!current.folders[part]) {
+          current.folders[part] = { notebooks: [], folders: {}, folderKey };
+        }
+        current = current.folders[part];
+      });
+      
+      current.notebooks.push({ name, path, label, folderKey: parts.join("/") });
+    });
+    return tree;
+  };
+
+  const tree = useMemo(() => buildTree(notebookPaths), [notebookPaths]);
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
+  };
+
+  const handleCopyLink = (url) => {
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  // ----------------------------------------------------
   const [activeTopicIndex, setActiveTopicIndex] = useState(0);
   const [visitedTopics, setVisitedTopics] = useState(new Set([0]));
   const [completedTopics, setCompletedTopics] = useState(new Set());
@@ -663,10 +837,271 @@ function App() {
 
   const isQuizComplete = Object.keys(quizAnswers).length === currentTopic.quiz.length;
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex font-sans">
+
+  const renderTreeFolder = (folderObj, parentId) => {
+    return Object.entries(folderObj).map(([folderName, folderData]) => {
+      const nodeId = parentId + "::" + folderData.folderKey;
+      const isOpen = expandedNodes[nodeId] !== false; 
+      return (
+        <div key={folderName} className="ml-3 mt-1 border-l border-gray-800 pl-2">
+          <div 
+            className="flex items-center gap-1 text-sm font-medium text-gray-400 cursor-pointer hover:text-gray-200 py-1"
+            onClick={() => toggleNode(nodeId)}
+          >
+            <svg className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            {folderName}
+          </div>
+          {isOpen && (
+            <div className="mt-1">
+              {renderTreeFolder(folderData.folders, parentId)}
+              {folderData.notebooks.map(nb => (
+                <div 
+                  key={nb.path}
+                  onClick={() => setSelectedNotebook(nb)}
+                  className={`ml-3 text-sm rounded px-2 py-1 cursor-pointer truncate ${selectedNotebook?.path === nb.path ? "bg-gray-800 text-teal-400" : "text-gray-300 hover:text-white hover:bg-gray-800"}`}
+                >
+                  {nb.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  const renderLeftPanel = () => {
+    if (fetchStatus === "error") {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <span className="text-4xl mb-4">⚠️</span>
+          <p className="text-red-400 mb-4">{fetchError}</p>
+          <button onClick={fetchNotebookTree} className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition-colors">
+            Try Again
+          </button>
+          <p className="text-xs text-gray-500 mt-4">Tip: GitHub allows 60 unauthenticated requests/hour.</p>
+        </div>
+      );
+    }
+
+    const sectionOrder = [
+      "HF Course (English)", "Video Tutorials", "HF Course (Other Languages)",
+      "Diffusers Docs", "Diffusers Notebooks", "Transformers Docs", "PEFT",
+      "Datasets", "SageMaker", "SmolAgents", "SetFit", "Examples", "Other"
+    ];
+
+    let contentToRender;
+
+    if (fetchStatus === "loading") {
+      contentToRender = (
+        <div className="p-4 space-y-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="space-y-3">
+              <div className="w-28 h-3 bg-gray-700 rounded animate-pulse"></div>
+              <div className="w-40 h-2 bg-gray-800 rounded animate-pulse ml-4"></div>
+              <div className="w-32 h-2 bg-gray-800 rounded animate-pulse ml-4"></div>
+              <div className="w-48 h-2 bg-gray-800 rounded animate-pulse ml-4"></div>
+            </div>
+          ))}
+        </div>
+      );
+    } else {
+      let activeSections = sectionOrder.filter(s => tree[s]);
       
-      {/* Sidebar */}
+      if (searchQuery.trim() !== "") {
+        const query = searchQuery.toLowerCase();
+        const resultsBySection = {};
+        notebookPaths.forEach(path => {
+          if (path.toLowerCase().includes(query)) {
+            const { label } = [
+              { prefix: "course/en/", label: "HF Course (English)" },
+              { prefix: "course/videos/", label: "Video Tutorials" },
+              { prefix: "course/", label: "HF Course (Other Languages)" },
+              { prefix: "diffusers_doc/", label: "Diffusers Docs" },
+              { prefix: "diffusers/", label: "Diffusers Notebooks" },
+              { prefix: "transformers_doc/en/", label: "Transformers Docs" },
+              { prefix: "peft_docs/", label: "PEFT" },
+              { prefix: "peft/", label: "PEFT" },
+              { prefix: "datasets-server_doc/", label: "Datasets" },
+              { prefix: "datasets_doc/", label: "Datasets" },
+              { prefix: "sagemaker/", label: "SageMaker" },
+              { prefix: "smolagents_doc/", label: "SmolAgents" },
+              { prefix: "setfit_doc/", label: "SetFit" },
+              { prefix: "examples/", label: "Examples" }
+            ].find(m => path.startsWith(m.prefix)) || { label: "Other" };
+
+            if (!resultsBySection[label]) resultsBySection[label] = [];
+            const filename = path.split("/").pop();
+            resultsBySection[label].push({ name: filename.replace(/\.ipynb$/, ""), path, label });
+          }
+        });
+
+        const totalMatches = Object.values(resultsBySection).flat().length;
+
+        contentToRender = (
+          <div className="p-2">
+            <div className="text-xs text-gray-400 mb-2 px-2">{totalMatches} matches</div>
+            {sectionOrder.filter(s => resultsBySection[s]).map(section => (
+              <div key={section} className="mb-4">
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 py-1">{section}</div>
+                <div className="mt-1">
+                  {resultsBySection[section].map(nb => (
+                    <div 
+                      key={nb.path}
+                      onClick={() => setSelectedNotebook(nb)}
+                      className={`ml-2 text-sm rounded px-2 py-1 cursor-pointer truncate ${selectedNotebook?.path === nb.path ? "bg-gray-800 text-teal-400" : "text-gray-300 hover:text-white hover:bg-gray-800"}`}
+                    >
+                      {nb.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      } else {
+        contentToRender = (
+          <div className="p-2">
+            {activeSections.map(section => {
+              const nodeId = "section::" + section;
+              const isOpen = expandedNodes[nodeId] !== false;
+              return (
+                <div key={section} className="mb-2">
+                  <div 
+                    className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 py-1 cursor-pointer hover:text-gray-200"
+                    onClick={() => toggleNode(nodeId)}
+                  >
+                    <svg className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    {section}
+                  </div>
+                  {isOpen && (
+                    <div>
+                      {renderTreeFolder(tree[section].folders, section)}
+                      {tree[section].notebooks.map(nb => (
+                        <div 
+                          key={nb.path}
+                          onClick={() => setSelectedNotebook(nb)}
+                          className={`ml-6 mt-1 text-sm rounded px-2 py-1 cursor-pointer truncate ${selectedNotebook?.path === nb.path ? "bg-gray-800 text-teal-400" : "text-gray-300 hover:text-white hover:bg-gray-800"}`}
+                        >
+                          {nb.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+    }
+
+    return (
+      <div className="w-[300px] flex flex-col border-r border-gray-800 bg-gray-900/50 shrink-0">
+        <div className="p-4 border-b border-gray-800 shrink-0">
+          <input 
+            type="text" 
+            placeholder="Search notebooks..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Escape' && setSearchQuery("")}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {contentToRender}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRightPanel = () => {
+    if (fetchStatus !== "success" || !selectedNotebook) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">← Select a notebook to preview</p>
+        </div>
+      );
+    }
+
+    const colabUrl = `https://colab.research.google.com/github/huggingface/notebooks/blob/main/${selectedNotebook.path}`;
+    const desc = notebookDescriptions[selectedNotebook.name] || `This notebook is from the '${selectedNotebook.label}' section. Open it in Colab to explore what it covers.`;
+    const tags = generateTags(selectedNotebook.name);
+    const readableTitle = formatReadableTitle(selectedNotebook.name);
+
+    return (
+      <div className="flex-1 overflow-y-auto p-4 flex justify-center items-start">
+        <div className="bg-gray-900 rounded-xl p-6 m-4 max-w-2xl w-full border border-gray-800 shadow-xl">
+          <h2 className="text-2xl font-bold text-white mb-4">{readableTitle}</h2>
+          
+          <div className="flex flex-wrap gap-2 mb-6">
+            <span className="bg-teal-900 text-teal-300 text-xs rounded-full px-2 py-0.5">{selectedNotebook.label}</span>
+            {selectedNotebook.folderKey && <span className="bg-gray-700 text-gray-300 text-xs rounded-full px-2 py-0.5">{selectedNotebook.folderKey}</span>}
+          </div>
+
+          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+            <h3 className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">What this covers</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
+          </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {tags.map(t => (
+                <span key={t} className="bg-gray-700 text-gray-300 text-xs rounded-full px-2 py-0.5">{t}</span>
+              ))}
+            </div>
+          )}
+
+          <a 
+            href={colabUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block w-full bg-teal-600 hover:bg-teal-500 text-white rounded-lg py-2 mt-4 font-medium text-center transition-colors"
+          >
+            Open in Colab
+          </a>
+          
+          <button 
+            onClick={() => handleCopyLink(colabUrl)}
+            className="w-full block bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg py-2 mt-2 text-sm text-center transition-colors"
+          >
+            {copiedLink ? "✓ Copied!" : "Copy Link"}
+          </button>
+          
+          <p className="text-xs text-gray-500 mt-2 break-all text-center">{colabUrl}</p>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-gray-950 text-gray-100 font-sans">
+      {/* Top Nav Bar */}
+      <header className="h-[48px] bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shrink-0 z-20">
+        <div className="font-bold text-white tracking-wide flex items-center">
+          <span role="img" aria-label="hugs" className="mr-2 text-xl">🤗</span>ML Dojo
+        </div>
+        <div className="flex h-full">
+          <button 
+            onClick={() => setActiveMainTab("learn")}
+            className={`px-4 h-full flex items-center transition-colors text-sm font-medium ${activeMainTab === "learn" ? "text-white border-b-2 border-teal-400" : "text-gray-400 hover:text-white"}`}
+          >
+            📚 Learn
+          </button>
+          <button 
+            onClick={() => setActiveMainTab("explore")}
+            className={`px-4 h-full flex items-center transition-colors text-sm font-medium ${activeMainTab === "explore" ? "text-white border-b-2 border-teal-400" : "text-gray-400 hover:text-white"}`}
+          >
+            🔬 Explore Notebooks
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-hidden relative">
+        {activeMainTab === "learn" ? (
+          <div className="flex h-full w-full">
+            {/* Sidebar */}
+
       <aside className="w-80 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="p-6 border-b border-gray-800">
           <h1 className="text-2xl font-bold text-teal-400">HuggingFace ML Dojo</h1>
@@ -1030,6 +1465,37 @@ function App() {
           </div>
         </div>
       </main>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full w-full">
+            {/* Explorer Header */}
+            <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between shrink-0">
+              <div>
+                <h1 className="text-white font-semibold">HuggingFace Notebooks</h1>
+                <p className="text-xs text-gray-400">
+                  {fetchStatus === "success" && lastFetched ? `${notebookPaths.length} notebooks · fetched at ${lastFetched.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : fetchStatus === "loading" ? "Fetching..." : fetchStatus === "error" ? "Fetch failed" : ""}
+                </p>
+              </div>
+              <button 
+                onClick={fetchNotebookTree}
+                disabled={fetchStatus === "loading"}
+                className="bg-gray-800 hover:bg-gray-700 text-teal-400 rounded-lg px-3 py-1 text-sm border border-gray-700 flex items-center justify-center min-w-[36px]"
+                aria-label="Refresh notebooks"
+              >
+                {fetchStatus === "loading" ? (
+                  <div className="w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : "↻"}
+              </button>
+            </div>
+            
+            {/* Two-panel area */}
+            <div className="flex flex-1 overflow-hidden">
+              {renderLeftPanel()}
+              {renderRightPanel()}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
