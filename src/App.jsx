@@ -682,16 +682,16 @@ function App() {
               <button
                 key={index}
                 onClick={() => handleTopicClick(index)}
-                className={\`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors \${
+                className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${
                   isActive ? 'bg-teal-900/30 border border-teal-500/50 text-teal-300' : 
                   isVisited ? 'bg-gray-800/50 hover:bg-gray-800 text-gray-300' : 
                   'hover:bg-gray-800 text-gray-400'
-                }\`}
+                }`}
               >
-                <div className={\`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border \${
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${
                   isCompleted ? 'bg-teal-500 border-teal-500 text-gray-900' :
                   'border-gray-600'
-                }\`}>
+                }`}>
                   {isCompleted && (
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -725,19 +725,19 @@ function App() {
           <div className="flex gap-1 bg-gray-950 p-1 rounded-lg w-max border border-gray-800">
             <button 
               onClick={() => setActiveTab('concept')}
-              className={\`px-4 py-1.5 rounded-md text-sm font-medium transition-colors \${activeTab === 'concept' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}\`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'concept' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}`}
             >
               Concept
             </button>
             <button 
               onClick={() => setActiveTab('quiz')}
-              className={\`px-4 py-1.5 rounded-md text-sm font-medium transition-colors \${activeTab === 'quiz' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}\`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'quiz' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}`}
             >
               Quiz
             </button>
             <button 
               onClick={() => setActiveTab('colab')}
-              className={\`px-4 py-1.5 rounded-md text-sm font-medium transition-colors \${activeTab === 'colab' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}\`}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'colab' ? 'bg-gray-800 text-teal-400 shadow' : 'text-gray-400 hover:text-gray-200'}`}
             >
               Colab Task
             </button>
@@ -870,7 +870,7 @@ function App() {
             {activeTab === 'quiz' && (
               <div className="space-y-8 animate-in fade-in duration-300">
                 {quizSubmitted ? (
-                  <div className={\`p-6 rounded-xl border \${quizScore >= 3 ? 'bg-teal-900/20 border-teal-500/50' : 'bg-red-900/20 border-red-500/50'} text-center\`}>
+                  <div className={`p-6 rounded-xl border ${quizScore >= 3 ? 'bg-teal-900/20 border-teal-500/50' : 'bg-red-900/20 border-red-500/50'} text-center`}>
                     <h3 className="text-2xl font-bold mb-2">
                       {quizScore >= 3 ? 'Topic Complete! ✅' : 'Keep Trying!'}
                     </h3>
@@ -898,10 +898,10 @@ function App() {
                           </h4>
                           <div className="space-y-2">
                             {q.options.map((opt, oIdx) => (
-                              <label key={oIdx} className={\`flex items-start p-4 rounded-lg border cursor-pointer transition-colors \${quizAnswers[qIdx] === oIdx ? 'bg-teal-900/20 border-teal-500' : 'bg-gray-950 border-gray-800 hover:border-gray-600'}\`}>
+                              <label key={oIdx} className={`flex items-start p-4 rounded-lg border cursor-pointer transition-colors ${quizAnswers[qIdx] === oIdx ? 'bg-teal-900/20 border-teal-500' : 'bg-gray-950 border-gray-800 hover:border-gray-600'}`}>
                                 <input 
                                   type="radio" 
-                                  name={\`q-\${qIdx}\`}
+                                  name={`q-${qIdx}`}
                                   value={oIdx}
                                   checked={quizAnswers[qIdx] === oIdx}
                                   onChange={() => setQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
@@ -918,7 +918,7 @@ function App() {
                       <button 
                         disabled={!isQuizComplete}
                         onClick={handleQuizSubmit}
-                        className={\`px-8 py-3 rounded-lg font-bold transition-all \${isQuizComplete ? 'bg-teal-600 hover:bg-teal-500 text-white' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}\`}
+                        className={`px-8 py-3 rounded-lg font-bold transition-all ${isQuizComplete ? 'bg-teal-600 hover:bg-teal-500 text-white' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
                       >
                         Submit Answers
                       </button>
@@ -933,7 +933,7 @@ function App() {
                     {currentTopic.quiz.map((q, qIdx) => {
                       const isCorrect = quizAnswers[qIdx] === q.correct;
                       return (
-                        <div key={qIdx} className={\`p-4 rounded-lg border \${isCorrect ? 'bg-green-900/10 border-green-900/50' : 'bg-red-900/10 border-red-900/50'}\`}>
+                        <div key={qIdx} className={`p-4 rounded-lg border ${isCorrect ? 'bg-green-900/10 border-green-900/50' : 'bg-red-900/10 border-red-900/50'}`}>
                           <div className="flex gap-3">
                             <div className="mt-1">
                               {isCorrect ? (
@@ -952,7 +952,7 @@ function App() {
                                   <span className="font-semibold text-green-400">Correct answer:</span> {q.options[q.correct]}
                                 </p>
                               )}
-                              <p className={\`text-sm \${isCorrect ? 'text-green-300/80' : 'text-red-300/80'} mt-2 p-2 bg-gray-950/50 rounded\`}>
+                              <p className={`text-sm ${isCorrect ? 'text-green-300/80' : 'text-red-300/80'} mt-2 p-2 bg-gray-950/50 rounded`}>
                                 {q.explanation}
                               </p>
                             </div>
@@ -1035,3 +1035,4 @@ function App() {
 }
 
 export default App;
+
