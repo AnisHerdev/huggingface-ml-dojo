@@ -91,7 +91,7 @@ print(tokenizer.decode(inputs["input_ids"][0]))
         "Understand the dictionary output format of the tokenizer."
       ],
       time: "~15 min",
-      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/master/course/en/chapter2/section4.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/course/en/chapter2/section4_pt.ipynb",
       lookFor: [
         "The difference in vocabulary sizes between different models.",
         "How unknown words are handled or broken down into subwords.",
@@ -186,7 +186,7 @@ print(results)
         "Experiment with batching inputs."
       ],
       time: "~10 min",
-      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/master/course/en/chapter1/section3.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/course/en/chapter1/section3.ipynb",
       lookFor: [
         "How the output format changes depending on the task (e.g., QA vs classification).",
         "The console output showing which model weights are being downloaded.",
@@ -294,7 +294,7 @@ model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy']
         "Train the model and visualize the loss."
       ],
       time: "~25 min",
-      link: "https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/text/text_classification_rnn.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/examples/language_modeling_from_scratch.ipynb",
       lookFor: [
         "The shape of the tensors as they pass from the Embedding layer to the LSTM.",
         "The impact of the pad_sequences function on the input data.",
@@ -401,7 +401,7 @@ def scaled_dot_product_attention(query, key, value):
         "Visualize attention heads."
       ],
       time: "~20 min",
-      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/master/course/en/chapter1/section4.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/course/en/chapter1/section8.ipynb",
       lookFor: [
         "The conceptual distinction between causal language modeling (decoders) and masked language modeling (encoders).",
         "How context length affects the computation.",
@@ -511,7 +511,7 @@ trainer.train()`,
         "Run the Trainer API to fine-tune a model."
       ],
       time: "~30 min",
-      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/master/course/en/chapter3/section1.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/course/en/chapter3/section3.ipynb",
       lookFor: [
         "How the `map` function applies tokenization across the dataset splits.",
         "The use of DataCollatorWithPadding to dynamically pad batches.",
@@ -616,7 +616,7 @@ image.save("generated_city.png")`,
         "Learn about different schedulers."
       ],
       time: "~15 min",
-      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/diffusers_doc/en/quicktour.ipynb",
+      link: "https://colab.research.google.com/github/huggingface/notebooks/blob/main/diffusers_doc/en/pytorch/quicktour.ipynb",
       lookFor: [
         "The impact of the `num_inference_steps` parameter on generation time and quality.",
         "How changing the scheduler algorithm alters the output.",
