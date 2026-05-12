@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useNotebookTree } from '../../hooks/useNotebookTree';
 import ExplorerSidebar from './ExplorerSidebar';
 import NotebookPreview from './NotebookPreview';
 
-export default function ExploreView() {
-  const { notebookPaths, tree, fetchStatus, fetchError, lastFetched, fetchNotebookTree } = useNotebookTree();
+export default function ExploreView({ notebookData }) {
+  const { notebookPaths, tree, fetchStatus, fetchError, lastFetched, fetchNotebookTree } = notebookData;
   const [selectedNotebook, setSelectedNotebook] = useState(null);
 
   return (

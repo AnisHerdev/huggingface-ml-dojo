@@ -36,9 +36,7 @@ export function useNotebookTree() {
     }
   };
 
-  useEffect(() => {
-    fetchNotebookTree();
-  }, []);
+
 
   const buildTree = (paths) => {
     const mapping = [
